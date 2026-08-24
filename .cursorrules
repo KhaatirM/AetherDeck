@@ -1,0 +1,13 @@
+# Cursor Rules for AetherDeck
+
+1. Code Quality & Modularity:
+- Always use TypeScript with explicit types; avoid `any`.
+- Keep components modular and atomic under `/components`.
+- Separate visual renderers by tier (`/renderers/tier-basic`, `/renderers/tier-plus`, `/renderers/tier-pro`).
+
+2. Performance & 3D:
+- Ensure Three.js / WebGL canvases are lazy-loaded (`next/dynamic` with `ssr: false`) to avoid hydration errors.
+- Dispose of WebGL materials and geometries properly upon unmounting.
+
+3. Fallbacks:
+- Always provide fallback mock data if `process.env.OPENAI_API_KEY` is not present, allowing local preview without crashing.
