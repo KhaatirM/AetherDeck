@@ -4,7 +4,7 @@ import { createAnthropic } from "@ai-sdk/anthropic";
 import type { GenerateDeckRequest } from "@/types/deck";
 import { deckSchema } from "@/lib/ai/schemas";
 import { buildFallbackDeck } from "@/lib/ai/fallback-deck";
-import { aetherDarkTheme } from "@/lib/mock-deck";
+import { aetherTheme } from "@/lib/themes";
 import { uid } from "@/lib/utils";
 
 export async function generateDeckFromPrompt(request: GenerateDeckRequest) {
@@ -47,7 +47,7 @@ export async function generateDeckFromPrompt(request: GenerateDeckRequest) {
       ...object,
       id: object.id || uid("deck"),
       tier: request.tier,
-      theme: object.theme ?? aetherDarkTheme,
+      theme: object.theme ?? aetherTheme,
       createdAt: now,
       updatedAt: now,
       slides: object.slides.map((slide) => ({
@@ -77,7 +77,8 @@ Tier preference: ${request.tier}.
 Target slide count: ${request.slideCount ?? 7}.
 Use varied layoutTypes (title, split, grid-3, stat-callout, timeline, cinematic-canvas).
 Include backgroundEffect and transitionType on every slide.
-Use dark cinematic theme colors (violet/cyan accents).
+Use a dark cinematic theme: background near #08090B, foreground near #EDEDEF, violet primary, cyan secondary.
+All theme colors must be 6-digit hex strings like #7C6CFF.
 User brief:
 ${request.prompt}`;
 }

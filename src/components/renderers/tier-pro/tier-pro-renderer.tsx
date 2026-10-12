@@ -1,13 +1,14 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import type { DeckTheme, Slide } from "@/types/deck";
 import {
-  BlockCard,
   SlideContentLayout,
   SlideShell,
+  renderStaticBlock,
 } from "@/components/renderers/shared/slide-primitives";
 import { ProBackdrop } from "@/components/renderers/tier-pro/pro-backdrop";
+import { EASE_OUT_EXPO } from "@/lib/motion";
 
 interface TierProRendererProps {
   slide: Slide;
@@ -24,52 +25,43 @@ export function TierProRenderer({
   diagramStep = 0,
   className,
 }: TierProRendererProps) {
+  let diagramIndex = -1;
+
   return (
-    <div className="relative h-full w-full overflow-hidden">
-      <ProBackdrop
-        effect={slide.backgroundEffect}
-        theme={theme}
-        slideIndex={slideIndex}
+    <div className="relative h-full w-full overflow-hidden" style={{ background: theme.colors.background }}>
+      <ProBackdrop effect={slide.backgroundEffect} theme={theme} slideIndex={slideIndex} />
+      <div
+        className="pointer-events-none absolute inset-0 z-[5]"
+        style={{
+          background:
+            "radial-gradient(ellipse 120% 90% at 50% 50%, transparent 55%, rgba(0,0,0,0.55) 100%)",
+        }}
       />
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="wait" initial={false}>
         <motion.div
           key={slide.id}
           className="relative z-10 h-full w-full"
-          initial={{ opacity: 0, scale: 1.06, filter: "blur(8px)" }}
+          initial={{ opacity: 0, scale: 1.08, filter: "blur(14px)" }}
           animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-          exit={{ opacity: 0, scale: 0.96, filter: "blur(4px)" }}
-          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          exit={{ opacity: 0, scale: 0.94, filter: "blur(8px)" }}
+          transition={{ duration: 0.9, ease: EASE_OUT_EXPO }}
         >
-          <SlideShell
-            slide={slide}
-            theme={theme}
-            className={className}
-            style={{ background: "transparent" }}
-          >
+          <SlideShell slide={slide} theme={theme} className={className} transparent>
             <SlideContentLayout
               slide={slide}
               theme={theme}
               renderBlock={(block, index) => {
                 const isDiagram = block.type === "diagram-step";
-                const dimmed = isDiagram && index > diagramStep;
+                if (isDiagram) diagramIndex += 1;
+                const dimmed = isDiagram && diagramIndex > diagramStep;
                 return (
                   <motion.div
-                    key={block.id}
-                    initial={{ opacity: 0, y: 40 }}
-                    animate={{
-                      opacity: dimmed ? 0.4 : 1,
-                      y: 0,
-                    }}
-                    transition={{
-                      delay: 0.15 + index * 0.1,
-                      duration: 0.55,
-                    }}
+                    className="h-full [&>*]:backdrop-blur-md"
+                    initial={{ opacity: 0, y: 40, z: -80 }}
+                    animate={{ opacity: dimmed ? 0.3 : 1, y: 0 }}
+                    transition={{ delay: 0.3 + index * 0.1, duration: 0.8, ease: EASE_OUT_EXPO }}
                   >
-                    <BlockCard
-                      block={block}
-                      theme={theme}
-                      className="border-white/15 bg-black/35 shadow-2xl shadow-black/40"
-                    />
+                    {renderStaticBlock(block, theme)}
                   </motion.div>
                 );
               }}

@@ -1,42 +1,25 @@
-import type { Deck, DeckTheme } from "@/types/deck";
+import type { Deck } from "@/types/deck";
+import { aetherTheme } from "@/lib/themes";
+import { buildFallbackDeck } from "@/lib/ai/fallback-deck";
 
-export const aetherDarkTheme: DeckTheme = {
-  name: "Aether Night",
-  mode: "dark",
-  colors: {
-    primary: "#8B5CF6",
-    secondary: "#06B6D4",
-    accent: "#F472B6",
-    background: "#070A12",
-    foreground: "#F8FAFC",
-    muted: "#94A3B8",
-    card: "rgba(15, 23, 42, 0.72)",
-    border: "rgba(148, 163, 184, 0.18)",
-  },
-  typography: {
-    headingFont: "var(--font-display)",
-    bodyFont: "var(--font-sans)",
-    scale: "dramatic",
-  },
-  ambientStyle: "cinematic",
-};
+/** Fixed timestamp so seeded decks render identically on server and client. */
+const SEED_TIME = "2026-01-01T00:00:00.000Z";
 
 export const mockDeck: Deck = {
   id: "deck_aether_demo",
-  title: "AetherDeck — Present Beyond Slides",
-  description:
-    "A cinematic multi-tier presentation experience that redefines how ideas move.",
-  theme: aetherDarkTheme,
+  title: "AetherDeck — Present beyond slides",
+  description: "A cinematic multi-tier presentation experience that redefines how ideas move.",
+  theme: aetherTheme,
   tier: "plus",
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
+  createdAt: SEED_TIME,
+  updatedAt: SEED_TIME,
   slides: [
     {
       id: "slide_01",
       layoutType: "title",
-      headline: "Present Beyond Slides",
+      headline: "Present beyond slides",
       subheadline:
-        "AetherDeck turns prompts into living decks — Minimalist, Fluid, or fully Cinematic.",
+        "AetherDeck turns a single prompt into a living deck. Minimal, fluid, or fully cinematic.",
       backgroundEffect: "aurora",
       transitionType: "cinematic-zoom",
       notes: "Open with energy. Pause after the tagline.",
@@ -51,17 +34,17 @@ export const mockDeck: Deck = {
     {
       id: "slide_02",
       layoutType: "split",
-      headline: "The Problem With Presentations",
+      headline: "Slides stopped evolving",
       subheadline: "Static decks flatten ideas that deserve motion and depth.",
       backgroundEffect: "gradient",
       transitionType: "slide",
-      notes: "Contrast old vs new presentation culture.",
+      notes: "Contrast old versus new presentation culture.",
       blocks: [
         {
           id: "b2",
           type: "card",
           title: "Yesterday",
-          body: "Bullet dumps, clipart, and click-through fatigue.",
+          body: "Bullet dumps, clip art, and click-through fatigue.",
           items: ["Flat layouts", "No motion hierarchy", "Weak emotional arc"],
         },
         {
@@ -69,15 +52,15 @@ export const mockDeck: Deck = {
           type: "card",
           title: "Tomorrow",
           body: "Story-first decks with tiered cinematic rendering.",
-          items: ["Modular blocks", "Fluid motion", "Immersive 3D scenes"],
+          items: ["Modular blocks", "Directed motion", "Immersive 3D scenes"],
         },
       ],
     },
     {
       id: "slide_03",
       layoutType: "grid-3",
-      headline: "Three Cinematic Tiers",
-      subheadline: "Pick the intensity that matches your audience.",
+      headline: "Three cinematic tiers",
+      subheadline: "Choose the intensity that matches the room.",
       backgroundEffect: "cyber-grid",
       transitionType: "morph",
       blocks: [
@@ -85,98 +68,59 @@ export const mockDeck: Deck = {
           id: "b4",
           type: "card",
           title: "Basic",
-          body: "Modern minimalist cards, grids, and crisp typography.",
+          body: "Minimal cards, grids and crisp typography.",
           icon: "sparkles",
-          accentColor: "#06B6D4",
+          accentColor: "#5EE7F2",
         },
         {
           id: "b5",
           type: "card",
           title: "Plus",
-          body: "Framer Motion reveals, morphing layouts, and step diagrams.",
+          body: "Choreographed reveals, morphing layouts and step diagrams.",
           icon: "zap",
-          accentColor: "#8B5CF6",
+          accentColor: "#7C6CFF",
         },
         {
           id: "b6",
           type: "card",
           title: "Pro",
-          body: "WebGL worlds, depth cameras, particles, and ambient light.",
+          body: "Real-time WebGL worlds, depth cameras and ambient light.",
           icon: "orbit",
-          accentColor: "#F472B6",
+          accentColor: "#B4A9FF",
         },
       ],
     },
     {
       id: "slide_04",
       layoutType: "stat-callout",
-      headline: "Built for Impact",
+      headline: "Built for impact",
       subheadline: "Numbers that land with presence.",
       backgroundEffect: "color",
       transitionType: "fade",
       blocks: [
-        {
-          id: "b7",
-          type: "stat",
-          value: "3×",
-          label: "Higher retention with motion storytelling",
-        },
-        {
-          id: "b8",
-          type: "stat",
-          value: "40s",
-          label: "Average time from prompt to first deck",
-        },
-        {
-          id: "b9",
-          type: "stat",
-          value: "100%",
-          label: "Exportable to Web, PDF, and PPTX",
-        },
+        { id: "b7", type: "stat", value: "3×", label: "Higher retention with motion storytelling" },
+        { id: "b8", type: "stat", value: "40s", label: "From prompt to first draft" },
+        { id: "b9", type: "stat", value: "100%", label: "Exportable to web, PDF and PPTX" },
       ],
     },
     {
       id: "slide_05",
       layoutType: "timeline",
-      headline: "From Prompt to Stage",
+      headline: "From prompt to stage",
       subheadline: "A clean pipeline from idea to immersive delivery.",
       backgroundEffect: "gradient",
       transitionType: "slide",
       blocks: [
-        {
-          id: "b10",
-          type: "timeline-item",
-          title: "Prompt",
-          body: "Describe the narrative or paste an outline.",
-          stepIndex: 0,
-        },
-        {
-          id: "b11",
-          type: "timeline-item",
-          title: "Structure",
-          body: "AI returns typed slides, blocks, and transitions.",
-          stepIndex: 1,
-        },
-        {
-          id: "b12",
-          type: "timeline-item",
-          title: "Render",
-          body: "Choose Basic, Plus, or Pro visual intensity.",
-          stepIndex: 2,
-        },
-        {
-          id: "b13",
-          type: "timeline-item",
-          title: "Present",
-          body: "Fullscreen player with keyboard-native control.",
-          stepIndex: 3,
-        },
+        { id: "b10", type: "timeline-item", title: "Prompt", body: "Describe the narrative or paste an outline.", stepIndex: 0 },
+        { id: "b11", type: "timeline-item", title: "Structure", body: "AI returns typed slides, blocks and transitions.", stepIndex: 1 },
+        { id: "b12", type: "timeline-item", title: "Render", body: "Choose Basic, Plus or Pro visual intensity.", stepIndex: 2 },
+        { id: "b13", type: "timeline-item", title: "Present", body: "A fullscreen player with keyboard-native control.", stepIndex: 3 },
       ],
     },
     {
       id: "slide_06",
       layoutType: "cinematic-canvas",
-      headline: "Enter the Pro Experience",
+      headline: "Enter the Pro experience",
       subheadline: "Depth. Light. Atmosphere. Your ideas deserve a stage.",
       backgroundEffect: "starfield",
       transitionType: "camera-pan",
@@ -185,21 +129,21 @@ export const mockDeck: Deck = {
         {
           id: "b14",
           type: "quote",
-          body: "A presentation should feel like a short film — not a spreadsheet.",
-          title: "Design Principle",
+          body: "A presentation should feel like a short film, not a spreadsheet.",
+          title: "Design principle",
         },
         {
           id: "b15",
           type: "diagram-step",
-          title: "Camera Travel",
+          title: "Camera travel",
           body: "Each slide advances the virtual camera through space.",
           stepIndex: 0,
         },
         {
           id: "b16",
           type: "diagram-step",
-          title: "Ambient Layers",
-          body: "Particles, orbs, and aurora respond to theme accents.",
+          title: "Ambient layers",
+          body: "Particles, orbs and aurora respond to theme accents.",
           stepIndex: 1,
         },
       ],
@@ -207,7 +151,7 @@ export const mockDeck: Deck = {
     {
       id: "slide_07",
       layoutType: "title",
-      headline: "Ready to Build?",
+      headline: "Ready when you are",
       subheadline: "Generate a deck, switch tiers live, and export anywhere.",
       backgroundEffect: "floating-orbs",
       transitionType: "cinematic-zoom",
@@ -216,9 +160,9 @@ export const mockDeck: Deck = {
           id: "b17",
           type: "bullet-list",
           items: [
-            "AI outline → structured Deck JSON",
+            "AI outline to structured deck",
             "Live tier switching in the editor",
-            "Web player · PDF · PPTX exports",
+            "Web player, PDF and PPTX export",
           ],
         },
       ],
@@ -226,12 +170,24 @@ export const mockDeck: Deck = {
   ],
 };
 
-export function cloneMockDeck(overrides?: Partial<Deck>): Deck {
-  return {
-    ...structuredClone(mockDeck),
-    id: `deck_${Date.now().toString(36)}`,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    ...overrides,
-  };
+export function seedDecks(): Deck[] {
+  return [
+    mockDeck,
+    buildFallbackDeck(
+      {
+        prompt: "NebulaForge Series A",
+        tier: "pro",
+        template: "pitch-deck",
+      },
+      { idPrefix: "seed_pitch", now: "2025-12-30T15:20:00.000Z" }
+    ),
+    buildFallbackDeck(
+      {
+        prompt: "Generative storytelling 101",
+        tier: "basic",
+        template: "lecture",
+      },
+      { idPrefix: "seed_lecture", now: "2025-12-27T09:45:00.000Z" }
+    ),
+  ];
 }

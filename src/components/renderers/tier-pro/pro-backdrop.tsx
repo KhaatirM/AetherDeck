@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Stars, Float } from "@react-three/drei";
 import * as THREE from "three";
@@ -31,39 +31,57 @@ function CameraRig({ slideIndex }: { slideIndex: number }) {
   return null;
 }
 
+const ORBS: { position: [number, number, number]; scale: number }[] = [
+  { position: [-2.6, 1, -3], scale: 3.2 },
+  { position: [2.8, -0.8, -2.5], scale: 2.6 },
+  { position: [0.4, 1.8, -4.5], scale: 3.8 },
+  { position: [-1.4, -1.6, -3.5], scale: 2.2 },
+];
+
+function useGlowTexture(): THREE.CanvasTexture {
+  const texture = useMemo(() => {
+    const size = 128;
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
+    if (ctx) {
+      const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+      gradient.addColorStop(0, "rgba(255,255,255,1)");
+      gradient.addColorStop(0.35, "rgba(255,255,255,0.35)");
+      gradient.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, size, size);
+    }
+    return new THREE.CanvasTexture(canvas);
+  }, []);
+
+  useEffect(() => () => texture.dispose(), [texture]);
+  return texture;
+}
+
 function FloatingOrbs({ colorA, colorB }: { colorA: string; colorB: string }) {
   const group = useRef<THREE.Group>(null);
+  const glow = useGlowTexture();
   useFrame((state) => {
     if (!group.current) return;
-    group.current.rotation.y = state.clock.elapsedTime * 0.12;
+    group.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.08) * 0.35;
   });
 
   return (
     <group ref={group}>
-      {[
-        [-2.2, 0.8, -2],
-        [2.4, -0.6, -1.5],
-        [0.2, 1.4, -3],
-        [-1.2, -1.1, -2.5],
-      ].map((pos, i) => (
-        <Float
-          key={i}
-          speed={1.2 + i * 0.2}
-          rotationIntensity={0.4}
-          floatIntensity={1.2}
-        >
-          <mesh position={pos as [number, number, number]}>
-            <sphereGeometry args={[0.35 + i * 0.08, 32, 32]} />
-            <meshStandardMaterial
+      {ORBS.map((orb, i) => (
+        <Float key={i} speed={0.8 + i * 0.15} rotationIntensity={0} floatIntensity={0.8}>
+          <sprite position={orb.position} scale={[orb.scale, orb.scale, 1]}>
+            <spriteMaterial
+              map={glow}
               color={i % 2 === 0 ? colorA : colorB}
-              emissive={i % 2 === 0 ? colorA : colorB}
-              emissiveIntensity={0.55}
-              roughness={0.25}
-              metalness={0.4}
               transparent
-              opacity={0.85}
+              opacity={0.55}
+              depthWrite={false}
+              blending={THREE.AdditiveBlending}
             />
-          </mesh>
+          </sprite>
         </Float>
       ))}
     </group>
@@ -186,6 +204,7 @@ export function ProBackdrop({
         dpr={[1, 1.75]}
         camera={{ position: [0, 0, 5], fov: 50 }}
         gl={{ antialias: true, alpha: true }}
+        resize={{ offsetSize: true }}
       >
         <Scene effect={effect} theme={theme} slideIndex={slideIndex} />
       </Canvas>
