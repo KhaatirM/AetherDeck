@@ -17,7 +17,7 @@ const PREVIEWS = TEMPLATES.map((template) => ({
 
 export function TemplateStrip() {
   return (
-    <section className="relative py-32">
+    <section id="templates" className="relative py-32">
       <div className="mx-auto max-w-6xl px-6">
         <SectionHeading
           eyebrow="Templates"

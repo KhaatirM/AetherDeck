@@ -8,10 +8,10 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const LINKS = [
-  { href: "#product", label: "Product" },
-  { href: "#tiers", label: "Tiers" },
-  { href: "#features", label: "Features" },
-  { href: "#workflow", label: "How it works" },
+  { href: "/#product", label: "Product" },
+  { href: "/#tiers", label: "Tiers" },
+  { href: "/#features", label: "Features" },
+  { href: "/#workflow", label: "How it works" },
 ];
 
 export function SiteNav() {
