@@ -38,9 +38,11 @@ AI_PROVIDER=openai
 
 ## Routes
 
-- `/` — Marketing landing
-- `/editor` — Split workspace (thumbnails · live canvas · inspector · AI chat)
-- `/present` — Fullscreen player (`Space` / `→` next, `Esc` exit, `N` notes)
+- `/` — Marketing landing with live product preview
+- `/decks` — Dashboard of decks saved in this browser
+- `/new` — Guided create flow (describe → direct → generate)
+- `/editor/[deckId]` — Workspace (slide navigator · live canvas · inspector · AI refine drawer, `Ctrl/⌘ J`)
+- `/present/[deckId]` — Fullscreen player (`Space` / `→` next, `Esc` exit, `N` notes, `F` fullscreen)
 - `/api/generate-deck` — Structured deck generation
 
 ## Deploy on Render

@@ -1,5 +1,5 @@
-import { PresentationPlayer } from "@/components/player/presentation-player";
+import { redirect } from "next/navigation";
 
-export default function PresentPage() {
-  return <PresentationPlayer />;
+export default function PresentIndexPage() {
+  redirect("/decks");
 }

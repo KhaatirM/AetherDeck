@@ -1,76 +1,91 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Maximize2 } from "lucide-react";
-import { useDeckStore, selectActiveSlide } from "@/store/deck-store";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { selectActiveDeck, selectActiveSlide, useDeckStore } from "@/store/deck-store";
+import { ScaledSlide } from "@/components/renderers/scaled-slide";
 import { SlideRenderer } from "@/components/renderers/slide-renderer";
-import { Button } from "@/components/ui/button";
-import { formatSlideLabel } from "@/lib/utils";
-import Link from "next/link";
+import { AiDrawer } from "@/components/ai/ai-drawer";
+import { cn, formatSlideLabel } from "@/lib/utils";
 
 export function LiveViewport() {
-  const deck = useDeckStore((s) => s.deck);
+  const deck = useDeckStore(selectActiveDeck);
+  const slide = useDeckStore(selectActiveSlide);
   const activeSlideIndex = useDeckStore((s) => s.activeSlideIndex);
   const diagramStep = useDeckStore((s) => s.diagramStep);
   const nextSlide = useDeckStore((s) => s.nextSlide);
   const prevSlide = useDeckStore((s) => s.prevSlide);
   const setDiagramStep = useDeckStore((s) => s.setDiagramStep);
-  const slide = useDeckStore(selectActiveSlide);
 
-  const diagramBlocks = slide.blocks.filter((b) => b.type === "diagram-step");
+  const diagramCount = slide.blocks.filter((b) => b.type === "diagram-step").length;
 
   return (
-    <section className="flex min-w-0 flex-1 flex-col">
-      <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
-        <div className="min-w-0">
-          <p className="text-[10px] uppercase tracking-[0.2em] text-muted">
-            Live canvas · Tier {deck.tier}
-          </p>
-          <p className="truncate text-sm font-medium">
-            {formatSlideLabel(activeSlideIndex)} — {slide.headline}
-          </p>
+    <section className="relative flex min-w-0 flex-1 flex-col bg-[#0A0B0D]">
+      <div className="pointer-events-none absolute inset-0 bg-dot-grid opacity-50" aria-hidden />
+
+      <div className="relative flex min-h-0 flex-1 items-center justify-center p-6 lg:p-10">
+        <div className="relative h-full w-full">
+          <ScaledSlide fit="contain">
+            <div className="h-full w-full overflow-hidden rounded-[6px] shadow-[0_0_0_1px_rgba(255,255,255,0.07),0_30px_80px_-20px_rgba(0,0,0,0.9),0_0_120px_-40px_rgba(124,108,255,0.35)]">
+              <SlideRenderer
+                deck={deck}
+                slide={slide}
+                slideIndex={activeSlideIndex}
+                diagramStep={diagramStep}
+              />
+            </div>
+          </ScaledSlide>
         </div>
-        <div className="flex items-center gap-2">
-          <Button size="sm" variant="secondary" onClick={prevSlide}>
+      </div>
+
+      <div className="relative flex h-16 shrink-0 items-start justify-center">
+        <div className="flex items-center gap-1 rounded-xl bg-surface-2/90 p-1 shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_12px_32px_-12px_rgba(0,0,0,0.8)] backdrop-blur-xl">
+          <button
+            type="button"
+            onClick={prevSlide}
+            disabled={activeSlideIndex === 0}
+            aria-label="Previous slide"
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-fg-secondary transition-colors hover:bg-white/[0.06] hover:text-fg-primary disabled:opacity-30"
+          >
             <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button size="sm" variant="secondary" onClick={nextSlide}>
+          </button>
+          <span className="min-w-[64px] text-center font-mono text-[11px] text-fg-secondary">
+            {formatSlideLabel(activeSlideIndex)} <span className="text-fg-tertiary">/ {formatSlideLabel(deck.slides.length - 1)}</span>
+          </span>
+          <button
+            type="button"
+            onClick={nextSlide}
+            disabled={activeSlideIndex === deck.slides.length - 1}
+            aria-label="Next slide"
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-fg-secondary transition-colors hover:bg-white/[0.06] hover:text-fg-primary disabled:opacity-30"
+          >
             <ChevronRight className="h-4 w-4" />
-          </Button>
-          <Button size="sm" variant="accent" asChild>
-            <Link href="/present">
-              <Maximize2 className="h-4 w-4" />
-              Present
-            </Link>
-          </Button>
+          </button>
+
+          {diagramCount > 0 ? (
+            <>
+              <span className="mx-1 h-4 w-px bg-white/10" />
+              <span className="pl-1 pr-1.5 text-[11px] text-fg-tertiary">Steps</span>
+              {Array.from({ length: diagramCount }).map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setDiagramStep(i)}
+                  className={cn(
+                    "flex h-7 w-7 items-center justify-center rounded-lg font-mono text-[11px] transition-colors",
+                    diagramStep === i
+                      ? "bg-accent/20 text-accent-soft shadow-[inset_0_0_0_1px_rgba(124,108,255,0.4)]"
+                      : "text-fg-tertiary hover:bg-white/[0.06] hover:text-fg-primary"
+                  )}
+                >
+                  {i + 1}
+                </button>
+              ))}
+            </>
+          ) : null}
         </div>
       </div>
 
-      <div className="flex flex-1 items-center justify-center p-4 md:p-8">
-        <div className="slide-frame w-full max-w-5xl border border-border shadow-2xl shadow-primary/10">
-          <SlideRenderer
-            deck={deck}
-            slide={slide}
-            slideIndex={activeSlideIndex}
-            diagramStep={diagramStep}
-          />
-        </div>
-      </div>
-
-      {diagramBlocks.length > 0 ? (
-        <div className="flex items-center justify-center gap-2 border-t border-border px-4 py-3">
-          <span className="text-xs text-muted">Diagram steps</span>
-          {diagramBlocks.map((_, i) => (
-            <Button
-              key={i}
-              size="sm"
-              variant={diagramStep === i ? "default" : "secondary"}
-              onClick={() => setDiagramStep(i)}
-            >
-              {i + 1}
-            </Button>
-          ))}
-        </div>
-      ) : null}
+      <AiDrawer />
     </section>
   );
 }

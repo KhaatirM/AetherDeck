@@ -1,82 +1,111 @@
 "use client";
 
-import { Plus, Trash2 } from "lucide-react";
-import { useDeckStore } from "@/store/deck-store";
-import { formatSlideLabel, cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { SlideRenderer } from "@/components/renderers/slide-renderer";
+import { useEffect, useRef } from "react";
+import { Copy, Plus, Trash2 } from "lucide-react";
+import { selectActiveDeck, useDeckStore } from "@/store/deck-store";
+import { SlideThumbnail } from "@/components/renderers/slide-renderer";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn, formatSlideLabel } from "@/lib/utils";
 
 export function SlideNavigator() {
-  const deck = useDeckStore((s) => s.deck);
+  const deck = useDeckStore(selectActiveDeck);
   const activeSlideIndex = useDeckStore((s) => s.activeSlideIndex);
   const setActiveSlideIndex = useDeckStore((s) => s.setActiveSlideIndex);
   const addSlide = useDeckStore((s) => s.addSlide);
+  const duplicateSlide = useDeckStore((s) => s.duplicateSlide);
   const deleteSlide = useDeckStore((s) => s.deleteSlide);
+  const activeRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    activeRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [activeSlideIndex]);
 
   return (
-    <aside className="flex h-full w-56 shrink-0 flex-col border-r border-border glass-strong">
-      <div className="flex items-center justify-between border-b border-border px-3 py-3">
-        <div>
-          <p className="text-[10px] uppercase tracking-[0.2em] text-muted">
-            Slides
-          </p>
-          <p className="text-sm font-medium">{deck.slides.length} frames</p>
-        </div>
-        <Button size="icon" variant="secondary" onClick={() => addSlide()}>
-          <Plus className="h-4 w-4" />
-        </Button>
+    <aside className="flex w-[212px] shrink-0 flex-col border-r border-hairline bg-surface-1/40">
+      <div className="flex h-11 items-center justify-between px-4">
+        <span className="text-[12px] font-medium text-fg-secondary">Slides</span>
+        <span className="font-mono text-[10.5px] text-fg-tertiary">{deck.slides.length}</span>
       </div>
-      <ScrollArea className="flex-1">
-        <div className="space-y-3 p-3">
+
+      <div className="scrollbar-thin flex-1 overflow-y-auto px-3 pb-3">
+        <div className="flex flex-col gap-2.5">
           {deck.slides.map((slide, index) => {
             const active = index === activeSlideIndex;
             return (
-              <div key={slide.id} className="group relative">
+              <div
+                key={slide.id}
+                ref={active ? activeRef : undefined}
+                className="group relative flex items-start gap-2"
+              >
+                <span
+                  className={cn(
+                    "mt-1 w-4 shrink-0 text-right font-mono text-[10px] transition-colors",
+                    active ? "text-fg-primary" : "text-fg-tertiary"
+                  )}
+                >
+                  {index + 1}
+                </span>
                 <button
                   type="button"
                   onClick={() => setActiveSlideIndex(index)}
-                  className={cn(
-                    "w-full overflow-hidden rounded-xl border text-left transition-all",
-                    active
-                      ? "border-primary/60 ring-2 ring-primary/30"
-                      : "border-border hover:border-white/25"
-                  )}
+                  aria-label={`Slide ${formatSlideLabel(index)}: ${slide.headline}`}
+                  aria-current={active ? "true" : undefined}
+                  className="relative min-w-0 flex-1 overflow-hidden rounded-[7px] outline-none"
                 >
-                  <div className="pointer-events-none aspect-video scale-[1.01] origin-top-left">
-                    <div className="h-[180%] w-[180%] origin-top-left scale-[0.555]">
-                      <SlideRenderer
-                        deck={deck}
-                        slide={slide}
-                        slideIndex={index}
-                        tier="basic"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between border-t border-border bg-black/40 px-2 py-1.5">
-                    <span className="text-[10px] font-medium text-muted">
-                      {formatSlideLabel(index)}
-                    </span>
-                    <span className="truncate text-[10px] text-white/70">
-                      {slide.headline}
-                    </span>
-                  </div>
+                  <SlideThumbnail slide={slide} theme={deck.theme} />
+                  <span
+                    className={cn(
+                      "pointer-events-none absolute inset-0 rounded-[7px] transition-shadow duration-200",
+                      active
+                        ? "shadow-[inset_0_0_0_1.5px_rgba(124,108,255,1),0_0_0_3px_rgba(124,108,255,0.18)]"
+                        : "shadow-[inset_0_0_0_1px_rgba(255,255,255,0.07)] group-hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.18)]"
+                    )}
+                  />
                 </button>
-                {deck.slides.length > 1 ? (
-                  <button
-                    type="button"
-                    onClick={() => deleteSlide(slide.id)}
-                    className="absolute right-1 top-1 hidden rounded-md bg-black/60 p-1 text-white/70 hover:text-red-300 group-hover:block"
-                    aria-label="Delete slide"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </button>
-                ) : null}
+                <div className="absolute right-1 top-1 flex gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        onClick={() => duplicateSlide(slide.id)}
+                        aria-label="Duplicate slide"
+                        className="flex h-5 w-5 items-center justify-center rounded bg-black/70 text-fg-secondary backdrop-blur hover:text-fg-primary"
+                      >
+                        <Copy className="h-2.5 w-2.5" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">Duplicate</TooltipContent>
+                  </Tooltip>
+                  {deck.slides.length > 1 ? (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          onClick={() => deleteSlide(slide.id)}
+                          aria-label="Delete slide"
+                          className="flex h-5 w-5 items-center justify-center rounded bg-black/70 text-fg-secondary backdrop-blur hover:text-red-300"
+                        >
+                          <Trash2 className="h-2.5 w-2.5" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="right">Delete</TooltipContent>
+                    </Tooltip>
+                  ) : null}
+                </div>
               </div>
             );
           })}
         </div>
-      </ScrollArea>
+
+        <button
+          type="button"
+          onClick={() => addSlide()}
+          className="ml-6 mt-3 flex h-9 w-[calc(100%-1.5rem)] items-center justify-center gap-1.5 rounded-[7px] border border-dashed border-white/10 text-[12px] text-fg-tertiary transition-colors hover:border-white/20 hover:bg-white/[0.02] hover:text-fg-primary"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Add slide
+        </button>
+      </div>
     </aside>
   );
 }

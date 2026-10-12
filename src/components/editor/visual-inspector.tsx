@@ -1,356 +1,315 @@
 "use client";
 
-import { useDeckStore, selectActiveSlide } from "@/store/deck-store";
-import type { BackgroundEffect, DeckTier, LayoutType, TransitionType } from "@/types/deck";
-import { Button } from "@/components/ui/button";
+import type { BackgroundEffect, DeckTheme, LayoutType, TransitionType } from "@/types/deck";
+import {
+  selectActiveDeck,
+  selectActiveSlide,
+  useDeckStore,
+  type InspectorTab,
+} from "@/store/deck-store";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { LayoutGlyph, backgroundPreview } from "@/components/editor/layout-swatches";
+import { aetherTheme, emberTheme, glacierTheme } from "@/lib/themes";
 import { cn } from "@/lib/utils";
-import { exportDeckToPptx } from "@/lib/export/pptx";
-import { printDeckToPdf } from "@/lib/export/pdf";
 
-const TIERS: { id: DeckTier; label: string; blurb: string }[] = [
-  {
-    id: "basic",
-    label: "Basic",
-    blurb: "Modern minimalist cards & typography",
-  },
-  {
-    id: "plus",
-    label: "Plus",
-    blurb: "Fluid motion & staggered reveals",
-  },
-  {
-    id: "pro",
-    label: "Pro",
-    blurb: "Cinematic WebGL immersion",
-  },
+const LAYOUTS: { id: LayoutType; label: string }[] = [
+  { id: "title", label: "Title" },
+  { id: "split", label: "Split" },
+  { id: "grid-3", label: "Grid" },
+  { id: "stat-callout", label: "Stats" },
+  { id: "timeline", label: "Timeline" },
+  { id: "cinematic-canvas", label: "Cinematic" },
 ];
 
-const LAYOUTS: LayoutType[] = [
-  "title",
-  "split",
-  "grid-3",
-  "stat-callout",
-  "timeline",
-  "cinematic-canvas",
+const BACKGROUNDS: { id: BackgroundEffect; label: string }[] = [
+  { id: "color", label: "Solid" },
+  { id: "gradient", label: "Gradient" },
+  { id: "aurora", label: "Aurora" },
+  { id: "cyber-grid", label: "Grid" },
+  { id: "starfield", label: "Stars" },
+  { id: "floating-orbs", label: "Orbs" },
+  { id: "3d-particles", label: "Particles" },
 ];
 
-const BACKGROUNDS: BackgroundEffect[] = [
-  "color",
-  "gradient",
-  "aurora",
-  "cyber-grid",
-  "starfield",
-  "floating-orbs",
-  "3d-particles",
+const TRANSITIONS: { id: TransitionType; label: string }[] = [
+  { id: "none", label: "None" },
+  { id: "fade", label: "Fade" },
+  { id: "slide", label: "Slide" },
+  { id: "morph", label: "Morph" },
+  { id: "cinematic-zoom", label: "Zoom" },
+  { id: "camera-pan", label: "Pan" },
 ];
 
-const TRANSITIONS: TransitionType[] = [
-  "none",
-  "fade",
-  "slide",
-  "morph",
-  "cinematic-zoom",
-  "camera-pan",
-];
+const PRESET_THEMES: DeckTheme[] = [aetherTheme, emberTheme, glacierTheme];
+
+function Section({ title, children, hint }: { title: string; children: React.ReactNode; hint?: string }) {
+  return (
+    <section className="border-b border-hairline px-4 py-4 last:border-b-0">
+      <div className="mb-3 flex items-baseline justify-between">
+        <h3 className="text-[12px] font-medium text-fg-primary">{title}</h3>
+        {hint ? <span className="text-[11px] text-fg-tertiary">{hint}</span> : null}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function SwatchButton({
+  active,
+  label,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  label: string;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button type="button" onClick={onClick} className="group flex flex-col items-center gap-1.5" aria-pressed={active}>
+      <span
+        className={cn(
+          "relative block aspect-video w-full overflow-hidden rounded-[7px] bg-surface-2 transition-shadow duration-200",
+          active
+            ? "shadow-[inset_0_0_0_1.5px_rgba(124,108,255,1),0_0_0_3px_rgba(124,108,255,0.15)]"
+            : "shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)] group-hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.2)]"
+        )}
+      >
+        {children}
+      </span>
+      <span className={cn("text-[11px] transition-colors", active ? "text-fg-primary" : "text-fg-tertiary group-hover:text-fg-secondary")}>
+        {label}
+      </span>
+    </button>
+  );
+}
 
 export function VisualInspector() {
-  const deck = useDeckStore((s) => s.deck);
+  const deck = useDeckStore(selectActiveDeck);
   const slide = useDeckStore(selectActiveSlide);
-  const rightPanelTab = useDeckStore((s) => s.rightPanelTab);
-  const setRightPanelTab = useDeckStore((s) => s.setRightPanelTab);
-  const setTier = useDeckStore((s) => s.setTier);
+  const tab = useDeckStore((s) => s.inspectorTab);
+  const setTab = useDeckStore((s) => s.setInspectorTab);
   const setTheme = useDeckStore((s) => s.setTheme);
   const updateSlide = useDeckStore((s) => s.updateSlide);
   const updateBlock = useDeckStore((s) => s.updateBlock);
-  const setTitle = useDeckStore((s) => s.setTitle);
 
   return (
-    <aside className="flex h-full w-80 shrink-0 flex-col border-l border-border glass-strong">
-      <div className="border-b border-border px-4 py-3">
-        <p className="text-[10px] uppercase tracking-[0.2em] text-muted">
-          Inspector
-        </p>
-        <p className="text-sm font-medium">Visual controls</p>
-      </div>
+    <aside className="flex w-[296px] shrink-0 flex-col border-l border-hairline bg-surface-1/40">
+      <Tabs value={tab} onValueChange={(v) => setTab(v as InspectorTab)} className="flex min-h-0 flex-1 flex-col">
+        <div className="flex h-11 items-center px-3">
+          <TabsList className="w-full">
+            <TabsTrigger value="design">Design</TabsTrigger>
+            <TabsTrigger value="content">Content</TabsTrigger>
+            <TabsTrigger value="theme">Theme</TabsTrigger>
+          </TabsList>
+        </div>
 
-      <Tabs
-        value={rightPanelTab}
-        onValueChange={(v) =>
-          setRightPanelTab(v as typeof rightPanelTab)
-        }
-        className="flex min-h-0 flex-1 flex-col px-3 pt-3"
-      >
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="tier">Tier</TabsTrigger>
-          <TabsTrigger value="blocks">Blocks</TabsTrigger>
-          <TabsTrigger value="theme">Theme</TabsTrigger>
-          <TabsTrigger value="export">Export</TabsTrigger>
-        </TabsList>
-
-        <ScrollArea className="flex-1 pb-4">
-          <TabsContent value="tier" className="space-y-3 pr-2">
-            {TIERS.map((tier) => (
-              <button
-                key={tier.id}
-                type="button"
-                onClick={() => setTier(tier.id)}
-                className={cn(
-                  "w-full rounded-xl border p-3 text-left transition-all",
-                  deck.tier === tier.id
-                    ? "border-primary/60 bg-primary/10"
-                    : "border-border bg-white/5 hover:border-white/25"
-                )}
-              >
-                <div className="text-sm font-semibold">{tier.label}</div>
-                <div className="mt-1 text-xs text-muted">{tier.blurb}</div>
-              </button>
-            ))}
-
-            <div className="space-y-2 pt-2">
-              <Label>Layout</Label>
-              <div className="flex flex-wrap gap-1.5">
+        <div className="scrollbar-thin min-h-0 flex-1 overflow-y-auto">
+          <TabsContent value="design">
+            <Section title="Layout">
+              <div className="grid grid-cols-3 gap-x-2 gap-y-3">
                 {LAYOUTS.map((layout) => (
-                  <Button
-                    key={layout}
-                    size="sm"
-                    variant={
-                      slide.layoutType === layout ? "default" : "secondary"
-                    }
-                    onClick={() =>
-                      updateSlide(slide.id, { layoutType: layout })
-                    }
+                  <SwatchButton
+                    key={layout.id}
+                    label={layout.label}
+                    active={slide.layoutType === layout.id}
+                    onClick={() => updateSlide(slide.id, { layoutType: layout.id })}
                   >
-                    {layout}
-                  </Button>
+                    <span className="absolute inset-0 p-0.5">
+                      <LayoutGlyph layout={layout.id} />
+                    </span>
+                  </SwatchButton>
                 ))}
               </div>
-            </div>
+            </Section>
 
-            <div className="space-y-2">
-              <Label>Background</Label>
-              <div className="flex flex-wrap gap-1.5">
+            <Section title="Background" hint={deck.tier === "pro" ? "Rendered in 3D" : undefined}>
+              <div className="grid grid-cols-4 gap-x-2 gap-y-3">
                 {BACKGROUNDS.map((bg) => (
-                  <Button
-                    key={bg}
-                    size="sm"
-                    variant={
-                      slide.backgroundEffect === bg ? "default" : "secondary"
-                    }
-                    onClick={() =>
-                      updateSlide(slide.id, { backgroundEffect: bg })
-                    }
+                  <SwatchButton
+                    key={bg.id}
+                    label={bg.label}
+                    active={slide.backgroundEffect === bg.id}
+                    onClick={() => updateSlide(slide.id, { backgroundEffect: bg.id })}
                   >
-                    {bg}
-                  </Button>
+                    <span
+                      className="absolute inset-0"
+                      style={{ background: backgroundPreview(bg.id, deck.theme.colors.primary, deck.theme.colors.secondary) }}
+                    />
+                  </SwatchButton>
                 ))}
               </div>
-            </div>
+            </Section>
 
-            <div className="space-y-2">
-              <Label>Transition</Label>
-              <div className="flex flex-wrap gap-1.5">
+            <Section title="Transition" hint={deck.tier === "basic" ? "Plays in Plus and Pro" : undefined}>
+              <div className="grid grid-cols-3 gap-1.5">
                 {TRANSITIONS.map((t) => (
-                  <Button
-                    key={t}
-                    size="sm"
-                    variant={
-                      slide.transitionType === t ? "default" : "secondary"
-                    }
-                    onClick={() =>
-                      updateSlide(slide.id, { transitionType: t })
-                    }
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => updateSlide(slide.id, { transitionType: t.id })}
+                    className={cn(
+                      "h-8 rounded-lg text-[12px] transition-all",
+                      slide.transitionType === t.id
+                        ? "bg-accent/15 text-fg-primary shadow-[inset_0_0_0_1px_rgba(124,108,255,0.5)]"
+                        : "bg-white/[0.03] text-fg-tertiary shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)] hover:text-fg-primary"
+                    )}
                   >
-                    {t}
-                  </Button>
+                    {t.label}
+                  </button>
                 ))}
               </div>
-            </div>
+            </Section>
           </TabsContent>
 
-          <TabsContent value="blocks" className="space-y-4 pr-2">
-            <div className="space-y-2">
-              <Label>Deck title</Label>
-              <Input
-                value={deck.title}
-                onChange={(e) => setTitle(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Headline</Label>
-              <Input
-                value={slide.headline}
-                onChange={(e) =>
-                  updateSlide(slide.id, { headline: e.target.value })
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Subheadline</Label>
-              <Textarea
-                value={slide.subheadline ?? ""}
-                onChange={(e) =>
-                  updateSlide(slide.id, { subheadline: e.target.value })
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Presenter notes</Label>
-              <Textarea
-                value={slide.notes ?? ""}
-                onChange={(e) =>
-                  updateSlide(slide.id, { notes: e.target.value })
-                }
-                placeholder="Speaking notes for this slide…"
-              />
-            </div>
-            {slide.blocks.map((block) => (
-              <div
-                key={block.id}
-                className="space-y-2 rounded-xl border border-border bg-white/5 p-3"
-              >
-                <p className="text-[10px] uppercase tracking-wider text-muted">
-                  {block.type}
-                </p>
-                {block.title !== undefined ? (
+          <TabsContent value="content">
+            <Section title="Slide">
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="headline">Headline</Label>
                   <Input
-                    value={block.title ?? ""}
-                    placeholder="Title"
-                    onChange={(e) =>
-                      updateBlock(slide.id, block.id, {
-                        title: e.target.value,
-                      })
-                    }
+                    id="headline"
+                    value={slide.headline}
+                    onChange={(e) => updateSlide(slide.id, { headline: e.target.value })}
                   />
-                ) : null}
-                {block.body !== undefined ||
-                block.type === "text" ||
-                block.type === "card" ||
-                block.type === "quote" ? (
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="subheadline">Supporting line</Label>
                   <Textarea
-                    value={block.body ?? ""}
-                    placeholder="Body"
-                    onChange={(e) =>
-                      updateBlock(slide.id, block.id, {
-                        body: e.target.value,
-                      })
-                    }
+                    id="subheadline"
+                    rows={2}
+                    value={slide.subheadline ?? ""}
+                    onChange={(e) => updateSlide(slide.id, { subheadline: e.target.value })}
                   />
-                ) : null}
-                {block.value !== undefined ? (
-                  <Input
-                    value={block.value ?? ""}
-                    placeholder="Stat value"
-                    onChange={(e) =>
-                      updateBlock(slide.id, block.id, {
-                        value: e.target.value,
-                      })
-                    }
-                  />
-                ) : null}
-                {block.label !== undefined ? (
-                  <Input
-                    value={block.label ?? ""}
-                    placeholder="Stat label"
-                    onChange={(e) =>
-                      updateBlock(slide.id, block.id, {
-                        label: e.target.value,
-                      })
-                    }
-                  />
-                ) : null}
+                </div>
               </div>
-            ))}
-          </TabsContent>
+            </Section>
 
-          <TabsContent value="theme" className="space-y-3 pr-2">
-            <div className="space-y-2">
-              <Label>Theme name</Label>
-              <Input
-                value={deck.theme.name}
-                onChange={(e) => setTheme({ name: e.target.value })}
+            <Section title="Blocks" hint={`${slide.blocks.length}`}>
+              <div className="flex flex-col gap-3">
+                {slide.blocks.map((block) => (
+                  <div key={block.id} className="flex flex-col gap-2 rounded-xl bg-white/[0.02] p-3 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]">
+                    <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-fg-tertiary">
+                      {block.type.replace("-", " ")}
+                    </span>
+                    {block.type === "stat" ? (
+                      <div className="grid grid-cols-[72px_1fr] gap-2">
+                        <Input
+                          aria-label="Value"
+                          value={block.value ?? ""}
+                          onChange={(e) => updateBlock(slide.id, block.id, { value: e.target.value })}
+                        />
+                        <Input
+                          aria-label="Label"
+                          value={block.label ?? ""}
+                          onChange={(e) => updateBlock(slide.id, block.id, { label: e.target.value })}
+                        />
+                      </div>
+                    ) : null}
+                    {block.title !== undefined ? (
+                      <Input
+                        aria-label="Title"
+                        value={block.title}
+                        onChange={(e) => updateBlock(slide.id, block.id, { title: e.target.value })}
+                      />
+                    ) : null}
+                    {block.body !== undefined ? (
+                      <Textarea
+                        aria-label="Body"
+                        rows={2}
+                        value={block.body}
+                        onChange={(e) => updateBlock(slide.id, block.id, { body: e.target.value })}
+                      />
+                    ) : null}
+                    {block.items ? (
+                      <Textarea
+                        aria-label="List items, one per line"
+                        rows={Math.max(2, block.items.length)}
+                        value={block.items.join("\n")}
+                        onChange={(e) => updateBlock(slide.id, block.id, { items: e.target.value.split("\n") })}
+                      />
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            </Section>
+
+            <Section title="Speaker notes">
+              <Textarea
+                rows={4}
+                value={slide.notes ?? ""}
+                placeholder="Only visible to you while presenting"
+                onChange={(e) => updateSlide(slide.id, { notes: e.target.value })}
               />
-            </div>
-            {(
-              [
-                ["primary", "Primary"],
-                ["secondary", "Secondary"],
-                ["accent", "Accent"],
-                ["background", "Background"],
-              ] as const
-            ).map(([key, label]) => (
-              <div key={key} className="flex items-center gap-3">
-                <Label className="w-24">{label}</Label>
-                <input
-                  type="color"
-                  className="h-9 w-12 cursor-pointer rounded border border-border bg-transparent"
-                  value={deck.theme.colors[key]}
-                  onChange={(e) =>
-                    setTheme({ colors: { ...deck.theme.colors, [key]: e.target.value } })
-                  }
-                />
-                <Input
-                  value={deck.theme.colors[key]}
-                  onChange={(e) =>
-                    setTheme({
-                      colors: { ...deck.theme.colors, [key]: e.target.value },
-                    })
-                  }
-                />
-              </div>
-            ))}
-            <div className="space-y-2">
-              <Label>Ambient style</Label>
-              <div className="flex flex-wrap gap-1.5">
-                {(["glass", "solid", "neon", "cinematic"] as const).map(
-                  (style) => (
-                    <Button
-                      key={style}
-                      size="sm"
-                      variant={
-                        deck.theme.ambientStyle === style
-                          ? "default"
-                          : "secondary"
-                      }
-                      onClick={() => setTheme({ ambientStyle: style })}
-                    >
-                      {style}
-                    </Button>
-                  )
-                )}
-              </div>
-            </div>
+            </Section>
           </TabsContent>
 
-          <TabsContent value="export" className="space-y-3 pr-2">
-            <p className="text-sm text-muted">
-              Export your deck for the stage, boardroom, or web player.
-            </p>
-            <Button
-              className="w-full"
-              variant="accent"
-              onClick={() => void exportDeckToPptx(deck)}
-            >
-              Download PPTX
-            </Button>
-            <Button
-              className="w-full"
-              variant="secondary"
-              onClick={() => printDeckToPdf(deck)}
-            >
-              Print / Save PDF
-            </Button>
-            <Button className="w-full" variant="outline" asChild>
-              <a href="/present" target="_blank" rel="noreferrer">
-                Open Web Player
-              </a>
-            </Button>
+          <TabsContent value="theme">
+            <Section title="Presets">
+              <div className="grid grid-cols-3 gap-2">
+                {PRESET_THEMES.map((preset) => {
+                  const active = preset.name === deck.theme.name;
+                  return (
+                    <button
+                      key={preset.name}
+                      type="button"
+                      onClick={() => setTheme(preset)}
+                      className={cn(
+                        "flex flex-col gap-2 rounded-xl p-2 text-left transition-shadow",
+                        active
+                          ? "shadow-[inset_0_0_0_1.5px_rgba(124,108,255,1)]"
+                          : "shadow-[inset_0_0_0_1px_rgba(255,255,255,0.07)] hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.16)]"
+                      )}
+                    >
+                      <span
+                        className="block h-9 rounded-md"
+                        style={{
+                          background: `radial-gradient(circle at 80% 0%, ${preset.colors.primary}, transparent 70%), radial-gradient(circle at 0% 100%, ${preset.colors.secondary}99, transparent 70%), ${preset.colors.background}`,
+                        }}
+                      />
+                      <span className="px-0.5 text-[11.5px] text-fg-secondary">{preset.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </Section>
+
+            <Section title="Colors">
+              <div className="flex flex-col gap-2">
+                {(
+                  [
+                    ["primary", "Primary"],
+                    ["secondary", "Secondary"],
+                    ["background", "Background"],
+                    ["foreground", "Text"],
+                  ] as const
+                ).map(([key, label]) => (
+                  <div key={key} className="flex items-center gap-2">
+                    <label className="relative h-8 w-8 shrink-0 cursor-pointer overflow-hidden rounded-lg shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)]">
+                      <span className="absolute inset-0" style={{ background: deck.theme.colors[key] }} />
+                      <input
+                        type="color"
+                        aria-label={label}
+                        className="absolute inset-0 cursor-pointer opacity-0"
+                        value={deck.theme.colors[key].slice(0, 7)}
+                        onChange={(e) => setTheme({ name: "Custom", colors: { ...deck.theme.colors, [key]: e.target.value } })}
+                      />
+                    </label>
+                    <span className="w-20 text-[12px] text-fg-secondary">{label}</span>
+                    <Input
+                      className="h-8 font-mono text-[11.5px] uppercase"
+                      value={deck.theme.colors[key]}
+                      onChange={(e) => setTheme({ name: "Custom", colors: { ...deck.theme.colors, [key]: e.target.value } })}
+                    />
+                  </div>
+                ))}
+              </div>
+            </Section>
           </TabsContent>
-        </ScrollArea>
+        </div>
       </Tabs>
     </aside>
   );
