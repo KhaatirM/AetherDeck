@@ -16,10 +16,7 @@ const DialogOverlay = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Overlay
     ref={ref}
-    className={cn(
-      "fixed inset-0 z-50 bg-black/70 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out",
-      className
-    )}
+    className={cn("fixed inset-0 z-50 bg-black/60 backdrop-blur-[2px]", className)}
     {...props}
   />
 ));
@@ -34,13 +31,13 @@ const DialogContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-2xl glass-strong p-6 shadow-2xl focus:outline-none",
+        "fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-surface-2 p-6 shadow-window outline-none animate-in-fade",
         className
       )}
       {...props}
     >
       {children}
-      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-md p-1 text-muted hover:bg-white/10 hover:text-foreground">
+      <DialogPrimitive.Close className="absolute right-3.5 top-3.5 rounded-md p-1.5 text-fg-tertiary transition-colors hover:bg-white/[0.06] hover:text-fg-primary">
         <X className="h-4 w-4" />
         <span className="sr-only">Close</span>
       </DialogPrimitive.Close>
@@ -49,16 +46,8 @@ const DialogContent = React.forwardRef<
 ));
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 
-function DialogHeader({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div
-      className={cn("mb-4 flex flex-col gap-1.5 text-left", className)}
-      {...props}
-    />
-  );
+function DialogHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return <div className={cn("mb-5 flex flex-col gap-1.5", className)} {...props} />;
 }
 
 function DialogTitle({
@@ -67,7 +56,7 @@ function DialogTitle({
 }: React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>) {
   return (
     <DialogPrimitive.Title
-      className={cn("text-lg font-semibold tracking-tight", className)}
+      className={cn("text-[15px] font-semibold tracking-[-0.01em]", className)}
       {...props}
     />
   );
@@ -79,7 +68,7 @@ function DialogDescription({
 }: React.ComponentPropsWithoutRef<typeof DialogPrimitive.Description>) {
   return (
     <DialogPrimitive.Description
-      className={cn("text-sm text-muted", className)}
+      className={cn("text-[13px] leading-relaxed text-fg-secondary", className)}
       {...props}
     />
   );
